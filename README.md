@@ -71,6 +71,22 @@ Full MCP protocol implementation:
 
 ---
 
+## Improvements & Feature Roadmap
+
+MCPReconX provides a CLI-driven pipeline (discovery → fingerprinting → CVE checks → attack pattern detection → reporting) backed by modules in `modules/`, with configuration in `config.yaml` and reports/logs written to `reports/` and `logs/`. The repository includes a smoke test (`python test_scanner.py`) and an installer script (`install.sh`).
+
+Improvements:
+- Add CI to run `test_scanner.py` (and optional linting) automatically on PRs.
+- Document test/runtime dependencies (e.g., `aiohttp`) and optional dev requirements in `requirements.txt`.
+- Expand troubleshooting guidance for config/report locations (`config.yaml`, `reports/`, `logs/`).
+
+Features to build/add:
+- Add unit tests per module (discovery, fingerprinting, CVE detection) with fixtures.
+- Extend `config.yaml` CVE signatures and map `exploits/` templates to findings.
+- Add additional report formats (CSV/HTML) and scan-to-scan summary diffs.
+
+---
+
 ## Installation
 
 ```bash
