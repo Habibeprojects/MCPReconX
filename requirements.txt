@@ -1,0 +1,37 @@
+# MCPReconX v2.0 Requirements
+# ===========================
+# Install with: pip install -r requirements.txt
+
+# Core async HTTP/WebSocket support
+aiohttp>=3.9.0
+websockets>=12.0
+aiofiles>=23.0.0
+
+# Data validation
+pydantic>=2.5.0
+
+# Configuration parsing
+pyyaml>=6.0.1
+
+# PDF Report Generation (optional - choose one or both)
+fpdf2>=2.7.0      # Preferred, lighter weight
+reportlab>=4.0.0  # Alternative, more features
+
+# LLM Integration (optional)
+# ollama>=0.1.0   # For local Ollama integration
+# openai>=1.0.0   # For OpenAI API
+# anthropic>=0.8.0  # For Anthropic API
+
+# Additional utilities
+colorama>=0.4.6   # Cross-platform colored terminal output
+rich>=13.0.0      # Enhanced terminal output
+
+# Network utilities
+netaddr>=0.9.0    # For network range scanning
+
+# Development dependencies (optional)
+# pytest>=7.4.0
+# pytest-asyncio>=0.21.0
+# pytest-aiohttp>=1.0.0
+# black>=23.0.0
+# mypy>=1.7.0

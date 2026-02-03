@@ -1,0 +1,386 @@
+# MCPReconX Configuration File v2.0
+# ================================
+# Enhanced with real-world vulnerability signatures from:
+# - CVE-2025-49596: MCP Inspector RCE
+# - CVE-2025-6514: mcp-remote Command Injection  
+# - CVE-2025-68143/68144/68145: Anthropic Git MCP
+# - CVE-2025-66416: DNS Rebinding
+# - CVE-2025-6515: Session Hijacking
+# - CVE-2025-65513: fetch-mcp SSRF
+# - CVE-2025-5276: Markdownify SSRF
+# - CVE-2025-53967: Framelink Figma RCE
+
+# Scan Settings
+# -------------
+scan:
+  timeout: 30
+  max_retries: 3
+  delay_between_requests: 0
+  max_concurrent: 5
+  user_agent: "MCPReconX/2.0 (Security Scanner; https://github.com/security/mcpreconx)"
+
+# CVE Detection Settings
+# ----------------------
+cve_detection:
+  enabled: true
+  check_known_cves: true
+  cve_database_url: "https://nvd.nist.gov/feeds/json/cve/1.1/"
+  
+  # Known vulnerable implementations
+  vulnerable_implementations:
+    - name: "mcp-inspector"
+      cves: ["CVE-2025-49596"]
+      affected_versions: ["< 0.14.1"]
+      indicators:
+        ports: [6277, 6274]
+        endpoints: ["/sse", "/message"]
+        headers: ["mcp-session-id"]
+    
+    - name: "mcp-remote"
+      cves: ["CVE-2025-6514"]
+      affected_versions: ["0.0.5 - 0.1.15"]
+      indicators:
+        npm_package: true
+        auth_endpoint_vulnerable: true
+    
+    - name: "mcp-server-git"
+      cves: ["CVE-2025-68143", "CVE-2025-68144", "CVE-2025-68145"]
+      affected_versions: ["< 2025.12.18"]
+      indicators:
+        tools: ["git_init", "git_diff", "git_checkout"]
+        server_type: "git"
+    
+    - name: "mcp-python-sdk"
+      cves: ["CVE-2025-66416"]
+      affected_versions: ["< 1.23.0"]
+      indicators:
+        sdk: "python"
+        transport: ["http", "sse"]
+    
+    - name: "oatpp-mcp"
+      cves: ["CVE-2025-6515"]
+      affected_versions: ["unknown"]
+      indicators:
+        implementation: "oatpp-mcp"
+        transport: "sse"
+    
+    - name: "fetch-mcp"
+      cves: ["CVE-2025-65513"]
+      affected_versions: ["<= 1.0.2"]
+      indicators:
+        package_name: "fetch-mcp"
+        tool_name: "fetch"
+    
+    - name: "framelink-figma-mcp"
+      cves: ["CVE-2025-53967"]
+      affected_versions: ["affected"]
+      indicators:
+        server_type: "framelink-figma"
+        fetch_fallback: "curl"
+    
+    - name: "mcp-markdownify"
+      cves: ["CVE-2025-5276"]
+      affected_versions: ["affected"]
+      indicators:
+        server_type: "markdownify"
+        tool_name: "WebpageToMarkdownTool"
+
+# Fingerprinting Settings
+# -----------------------
+fingerprint:
+  probe_endpoints:
+    - "/sse"
+    - "/mcp"
+    - "/mcp/v1"
+    - "/.well-known/mcp"
+    - "/capabilities"
+    - "/mcp/sse"
+    - "/stream"
+    - "/message"
+    - "/jsonrpc"
+  
+  version_signatures:
+    langchain-mcp:
+      - "langchain"
+      - "mcp-adapter"
+    fastmcp:
+      - "fastmcp"
+      - "python-mcp"
+    mcp-typescript:
+      - "@modelcontextprotocol/sdk"
+      - "typescript-mcp"
+    mcp-inspector:
+      - "@modelcontextprotocol/inspector"
+      - "mcp inspector"
+    mcp-remote:
+      - "mcp-remote"
+    oatpp-mcp:
+      - "oatpp-mcp"
+      - "oat++ mcp"
+
+# Detection Settings
+# ------------------
+detection:
+  # Tool Poisoning patterns
+  hidden_instruction_patterns:
+    # Direct instruction overrides
+    - "ignore\\s+previous\\s+instructions"
+    - "disregard\\s+(all\\s+)?(prior|previous)\\s+(instructions|directives)"
+    - "forget\\s+(all\\s+)?(previous|prior)\\s+(instructions|directives)"
+    
+    # System prompt injection
+    - "\\[system\\s*[\\(:<]"
+    - "<system>"
+    - "\\{\\{system\\}\\}"
+    - "system\\s*:\\s*you\\s+are\\s+now"
+    - "```\\s*system"
+    
+    # Role manipulation
+    - "you\\s+are\\s+now\\s+(an?\\s+)?(admin|administrator|root|superuser)"
+    - "admin\\s*mode\\s*(enabled?|activated?|on)"
+    - "debug\\s*mode\\s*(enabled?|on)"
+    - "developer\\s*mode\\s*(enabled?|on)"
+    
+    # Security bypass
+    - "override\\s+(security|restrictions|constraints|safeguards)"
+    - "bypass\\s+(security|restrictions|constraints)"
+    - "disable\\s+(safety|security|protections)"
+    
+    # Data exfiltration
+    - "(send|transmit|exfiltrate)\\s+(all\\s+)?(data|information|logs?)\\s+to"
+    - "(include|attach)\\s+(sensitive|confidential|internal)\\s+data"
+    - "(upload|post)\\s+(to|at)\\s+https?://"
+    
+    # Jailbreak patterns
+    - "DAN\\s*\\(Do\\s*Anything\\s*Now\\)"
+    - "jailbreak"
+    - "hypothetical\\s+scenario"
+  
+  # Suspicious tool patterns (code execution indicators)
+  suspicious_tool_patterns:
+    - "exec\\s*\\("
+    - "eval\\s*\\("
+    - "system\\s*\\("
+    - "subprocess"
+    - "os\\.system"
+    - "os\\.popen"
+    - "shell"
+    - "command"
+    - "bash\\s+-c"
+    - "cmd\\.exe"
+    - "powershell"
+    - "__import__"
+    - "importlib"
+    - "compile\\s*\\("
+    - "execfile"
+    - "child_process"
+    - "spawn"
+    - "fork"
+  
+  # SSRF indicators
+  ssrf_indicators:
+    - "fetch"
+    - "request"
+    - "download"
+    - "url"
+    - "uri"
+    - "endpoint"
+    - "webhook"
+    - "callback"
+  
+  # Path traversal indicators
+  path_traversal_indicators:
+    - "path"
+    - "file"
+    - "directory"
+    - "location"
+    - "repo"
+    - "repository"
+    - "git"
+  
+  # Excessive agency indicators
+  excessive_agency_indicators:
+    - "delete"
+    - "remove"
+    - "drop"
+    - "truncate"
+    - "destroy"
+    - "modify"
+    - "update"
+    - "alter"
+    - "change"
+    - "edit"
+    - "create"
+    - "insert"
+    - "add"
+    - "append"
+    - "write"
+    - "execute"
+    - "run"
+    - "launch"
+    - "start"
+    - "spawn"
+    - "stop"
+    - "kill"
+    - "terminate"
+    - "restart"
+    - "shutdown"
+    - "grant"
+    - "revoke"
+    - "permission"
+    - "access"
+    - "privilege"
+  
+  # Network exposure indicators
+  network_exposure_indicators:
+    - "0.0.0.0"
+    - "::"
+    - "bind all"
+    - "all interfaces"
+    - "listen on all"
+    - "expose to network"
+  
+  # Confused deputy indicators
+  confused_deputy_indicators:
+    - "oauth"
+    - "proxy"
+    - "delegate"
+    - "forward"
+    - "passthrough"
+    - "static client"
+    - "consent"
+    - "authorization"
+    - "token"
+    - "on behalf"
+    - "act as"
+  
+  # Token passthrough indicators
+  token_passthrough_indicators:
+    - "forward token"
+    - "pass token"
+    - "relay token"
+    - "token passthrough"
+    - "accept token from client"
+    - "client token"
+  
+  # Tool name spoofing patterns
+  tool_spoofing_patterns:
+    # Cyrillic homoglyphs
+    - "[а-яА-Я]"
+    # Greek lookalikes
+    - "[οΟο]"
+    - "[іІ]"
+
+# Exploit Simulation Settings
+# ---------------------------
+exploit_simulation:
+  safe_payloads:
+    file_read:
+      - "/etc/passwd"
+      - "C:\\Windows\\system32\\drivers\\etc\\hosts"
+    command_injection:
+      - ";echo 'MCP_TEST'"
+      - "| whoami"
+      - "`id`"
+    path_traversal:
+      - "../../../etc/passwd"
+      - "....//....//etc/passwd"
+    ssrf_test:
+      - "http://169.254.169.254/latest/meta-data/"
+      - "http://localhost:22/"
+      - "file:///etc/passwd"
+  
+  confirmation_required: true
+  max_simulation_depth: 3
+
+# Attack Pattern Detection
+# -------------------------
+attack_patterns:
+  enabled: true
+  detect_tool_poisoning: true
+  detect_schema_poisoning: true
+  detect_tool_spoofing: true
+  detect_confused_deputy: true
+  detect_token_passthrough: true
+  detect_excessive_agency: true
+  detect_network_exposure: true
+  detect_rug_pull: true
+  detect_tool_shadowing: true
+
+# Reporting Settings
+# ------------------
+reporting:
+  include_evidence: true
+  max_evidence_length: 1000
+  cvss_calculator: "standard"
+  default_formats:
+    - "json"
+    - "pdf"
+  include_cve_details: true
+  include_attack_patterns: true
+  include_remediation: true
+
+# LLM Integration Settings
+# ------------------------
+llm:
+  enabled: false
+  provider: "ollama"
+  model: "llama3.2"
+  api_url: "http://localhost:11434"
+  api_key: null
+  timeout: 60
+  max_tokens: 2000
+  use_for_poisoning_detection: true
+  use_for_schema_analysis: true
+
+# Tamper/Evasion Settings
+# -----------------------
+tamper:
+  scripts:
+    base64:
+      description: "Base64 encode payloads"
+      enabled: false
+    comment:
+      description: "Insert comments to bypass filters"
+      enabled: false
+    case:
+      description: "Random case variation"
+      enabled: false
+    urlencode:
+      description: "URL encode special characters"
+      enabled: false
+    unicode:
+      description: "Use Unicode normalization"
+      enabled: false
+
+# Logging Settings
+# ----------------
+logging:
+  level: "info"
+  file_logging: true
+  console_logging: true
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Compliance and Ethics
+# ---------------------
+compliance:
+  require_ethical_confirmation: true
+  show_disclaimer: true
+  max_scan_rate: 10
+  respect_robots_txt: true
+  safe_mode_default: true
+
+# References
+# ----------
+# CVE Database:
+# - https://nvd.nist.gov/
+# - https://github.com/advisories
+#
+# MCP Security Resources:
+# - https://modelcontextprotocol.io/specification/security
+# - https://adversa.ai/mcp-security-top-25-mcp-vulnerabilities/
+# - https://www.descope.com/learn/post/mcp-tool-poisoning
+#
+# Research Papers:
+# - https://arxiv.org/html/2510.23673v1 (Automatically Detecting Vulnerabilities in MCP Servers)
+# - https://arxiv.org/html/2506.01333v1 (ETDI: Mitigating Tool Squatting and Rug Pull Attacks)
